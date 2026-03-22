@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://wa.me; style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self' https://script.google.com; frame-src 'self' https://wa.me https://www.google.com;">
+    <title>El Establo - Restaurante & Pedidos por WhatsApp</title>
+    <meta name="description" content="Restaurante El Establo - Pedidos por WhatsApp sin pasarela de pago. Hamburguesas, Tex-Mex, Parrilla, Bebidas y más.">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="https://img.icons8.com/color/96/000000/cow.png">
+</head>
+<body>
+    <!-- Entry Pop-up (inicialmente oculto) -->
+    <div id="entry-popup" class="modal" aria-hidden="true" role="dialog" aria-labelledby="popup-title">
+        <div class="modal-content">
+            <button class="close-modal" aria-label="Cerrar pop-up">&times;</button>
+            <h2 id="popup-title">¡Oferta del día!</h2>
+            <p class="popup-offer">Solo hoy: <strong>Costillas BBQ con papas -20%</strong></p>
+            <p class="popup-price">Precio especial: <span class="price">$10.00</span></p>
+            <p class="popup-desc">Aprovecha esta oferta exclusiva disponible solo por hoy.</p>
+            <div class="popup-actions">
+                <button class="btn btn-primary" id="customize-promo-popup">
+                    <i class="fas fa-sliders-h"></i> Personalizar y agregar
+                </button>
+                <button class="btn btn-secondary" id="add-promo-popup">
+                    <i class="fas fa-cart-plus"></i> Agregar sin personalizar
+                </button>
+                <button class="btn btn-outline" id="close-popup">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-inner">
+                <div class="logo">
+                    <img src="https://img.icons8.com/color/96/000000/cow.png" alt="Logo El Establo" width="60" height="60">
+                    <h1>El Establo</h1>
+                </div>
+                <div class="cart-icon" id="cart-icon" role="button" aria-label="Ver carrito" tabindex="0">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cart-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegación sticky -->
+    <nav class="sticky-nav" role="navigation" aria-label="Categorías de productos">
+        <div class="container">
+            <ul class="nav-list">
+                <li><a href="#promos" class="nav-link">Promos</a></li>
+                <li><a href="#hamburguesas" class="nav-link">Hamburguesas</a></li>
+                <li><a href="#tex-mex" class="nav-link">Tex-Mex</a></li>
+                <li><a href="#parrilla" class="nav-link">Parrilla</a></li>
+                <li><a href="#bebidas" class="nav-link">Bebidas</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Carrusel Hero con Swiper -->
+    <section class="hero" aria-label="Promociones destacadas">
+        <div class="swiper">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Promoción 1: Hamburguesa doble con papas">
+                    <div class="slide-content">
+                        <h2>Promo Doble Establo</h2>
+                        <p>2 hamburguesas + papas + 2 bebidas por solo $15.99</p>
+                        <button class="btn btn-hero">Ordenar ahora</button>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Promoción 2: Tacos Tex-Mex">
+                    <div class="slide-content">
+                        <h2>Tacos Night</h2>
+                        <p>6 tacos + guacamole + salsa especial $12.50</p>
+                        <button class="btn btn-hero">Ordenar ahora</button>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Promoción 3: Parrilla mixta">
+                    <div class="slide-content">
+                        <h2>Parrilla Familiar</h2>
+                        <p>Carne, pollo, chorizo, ensalada y arepas $24.99</p>
+                        <button class="btn btn-hero">Ordenar ahora</button>
+                    </div>
+                </div>
+        </div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-prev" aria-label="Slide anterior"></div>
+        <div class="swiper-button-next" aria-label="Slide siguiente"></div>
+    </div>
+    
+    <!-- Botones de acción después del carrusel -->
+    <div class="hero-actions">
+        <div class="container">
+            <div class="hero-buttons">
+                <button class="btn btn-primary btn-hero-action" onclick="document.getElementById('promos').scrollIntoView({ behavior: 'smooth' })">
+                    <i class="fas fa-tags"></i> Ver Promociones
+                </button>
+                <button class="btn btn-primary btn-hero-action" onclick="if(cart.length > 0) { openCartModal(); } else { alert('El carrito está vacío. Agrega productos primero.'); }">
+                    <i class="fas fa-shopping-cart"></i> Pedir Ahora
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección Promos -->
+    <section id="promos" class="section" aria-labelledby="promos-title">
+        <div class="container">
+            <h2 id="promos-title" class="section-title">Promociones</h2>
+            <div class="products-grid">
+                <!-- Productos se cargarán dinámicamente -->
+                <div class="product-card placeholder">
+                    <div class="product-image"></div>
+                    <h3 class="product-name">Cargando...</h3>
+                    <p class="product-desc">Los productos se mostrarán aquí.</p>
+                    <div class="product-price">$0.00</div>
+                    <button class="btn btn-product" disabled>Agregar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Hamburguesas -->
+    <section id="hamburguesas" class="section" aria-labelledby="hamburguesas-title">
+        <div class="container">
+            <h2 id="hamburguesas-title" class="section-title">Hamburguesas</h2>
+            <div class="products-grid">
+                <div class="product-card placeholder">
+                    <div class="product-image"></div>
+                    <h3 class="product-name">Hamburguesa Clásica</h3>
+                    <p class="product-desc">Carne, queso, lechuga, tomate, cebolla.</p>
+                    <div class="product-price">$8.99</div>
+                    <button class="btn btn-product">Personalizar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Tex-Mex -->
+    <section id="tex-mex" class="section" aria-labelledby="tex-mex-title">
+        <div class="container">
+            <h2 id="tex-mex-title" class="section-title">Tex-Mex</h2>
+            <div class="products-grid">
+                <div class="product-card placeholder">
+                    <div class="product-image"></div>
+                    <h3 class="product-name">Tacos de Carne</h3>
+                    <p class="product-desc">3 tacos con carne molida, cilantro, cebolla.</p>
+                    <div class="product-price">$7.50</div>
+                    <button class="btn btn-product">Personalizar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Parrilla -->
+    <section id="parrilla" class="section" aria-labelledby="parrilla-title">
+        <div class="container">
+            <h2 id="parrilla-title" class="section-title">Parrilla</h2>
+            <div class="products-grid">
+                <div class="product-card placeholder">
+                    <div class="product-image"></div>
+                    <h3 class="product-name">Churrasco</h3>
+                    <p class="product-desc">Corte de res, arepa, ensalada, chimichurri.</p>
+                    <div class="product-price">$14.99</div>
+                    <button class="btn btn-product">Personalizar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Bebidas -->
+    <section id="bebidas" class="section" aria-labelledby="bebidas-title">
+        <div class="container">
+            <h2 id="bebidas-title" class="section-title">Bebidas</h2>
+            <div class="products-grid">
+                <div class="product-card placeholder">
+                    <div class="product-image"></div>
+                    <h3 class="product-name">Refresco 500ml</h3>
+                    <p class="product-desc">Coca‑Cola, Pepsi, Sprite, Fanta.</p>
+                    <div class="product-price">$2.50</div>
+                    <button class="btn btn-product">Agregar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Quiénes Somos -->
+    <section id="quienes-somos" class="section" aria-labelledby="quienes-somos-title">
+        <div class="container">
+            <h2 id="quienes-somos-title" class="section-title">Quiénes Somos</h2>
+            <div class="about-grid">
+                <!-- Columna Izquierda: Imagen e Historia -->
+                <div class="about-column about-story">
+                    <div class="about-image">
+                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Interior del restaurante El Establo con ambiente acogedor y familiar">
+                    </div>
+                    <div class="about-text">
+                        <h3>Nuestra Historia</h3>
+                        <p>Desde 2010, <strong>El Establo</strong> ha sido el lugar favorito de las familias para disfrutar de la mejor carne a la parrilla. Nacimos con la pasión por ofrecer cortes de primera calidad, preparados con técnicas tradicionales que resaltan el sabor auténtico de cada pieza. Nuestro ambiente cálido y familiar te hará sentir como en casa, mientras compartes momentos inolvidables con tus seres queridos alrededor de una buena mesa.</p>
+                    </div>
+                </div>
+                
+                <!-- Columna Derecha: Horario y Mapa -->
+                <div class="about-column about-info">
+                    <div class="about-schedule">
+                        <h3><i class="fas fa-clock"></i> Horario de Atención</h3>
+                        <ul class="schedule-list">
+                            <li><span>Lunes a Domingo</span><span>12:00 pm – 11:00 pm</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="about-location">
+                        <h3><i class="fas fa-map-marker-alt"></i> Ubicación</h3>
+                        <p class="address">Av. Principal 123, Ciudad</p>
+                        <div class="map-container">
+                            <a href="https://www.google.com/maps/search/?api=1&query=Av.+Principal+123,+Ciudad" target="_blank" rel="noopener noreferrer" class="map-link" aria-label="Ver ubicación en Google Maps">
+                                <iframe 
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.4!2d-66.9!3d10.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDMwJzAwLjAiTiA2NsKwNTQnMDAuMCJX!5e0!3m2!1ses!2sve!4v1600000000000!5m2!1ses!2sve" 
+                                    width="100%" 
+                                    height="250" 
+                                    style="border:0;" 
+                                    allowfullscreen="" 
+                                    loading="lazy" 
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                    title="Mapa de ubicación de El Establo">
+                                </iframe>
+                            </a>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=Av.+Principal+123,+Ciudad" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-directions">
+                            <i class="fas fa-directions"></i> Cómo llegar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Reservaciones -->
+    <section id="reservaciones" class="section" aria-labelledby="reservaciones-title">
+        <div class="container">
+            <h2 id="reservaciones-title" class="section-title">Reserva tu mesa</h2>
+            <div class="reservation-container">
+                <form id="reservation-form" class="reservation-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reservation-name">Nombre completo *</label>
+                            <input type="text" id="reservation-name" name="name" required placeholder="Ej: Juan Pérez">
+                            <small class="error-message" id="reservation-name-error"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reservation-phone">Teléfono *</label>
+                            <input type="tel" id="reservation-phone" name="phone" required placeholder="Ej: 0412-1234567">
+                            <small class="error-message" id="reservation-phone-error"></small>
+                            <small class="hint">Formato: 0412-1234567, 4121234567, +584121234567</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reservation-date">Fecha de reserva *</label>
+                            <input type="date" id="reservation-date" name="date" required>
+                            <small class="error-message" id="reservation-date-error"></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reservation-people">Número de personas *</label>
+                            <select id="reservation-people" name="people" required>
+                                <option value="">-- Selecciona --</option>
+                                <option value="2">2 personas</option>
+                                <option value="4">4 personas</option>
+                                <option value="6">6 personas</option>
+                                <option value="8">8 personas</option>
+                                <option value="10">10+ personas</option>
+                            </select>
+                            <small class="error-message" id="reservation-people-error"></small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reservation-event">Tipo de evento</label>
+                        <select id="reservation-event" name="event">
+                            <option value="">-- Selecciona --</option>
+                            <option value="cumpleaños">Cumpleaños</option>
+                            <option value="aniversario">Aniversario</option>
+                            <option value="corporativo">Corporativo</option>
+                            <option value="cena-privada">Cena privada</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reservation-notes">Notas adicionales</label>
+                        <textarea id="reservation-notes" name="notes" rows="4" placeholder="Ej: Mesa cerca de la ventana, alergias alimentarias, celebración especial..."></textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="reservation-promo-consent" name="promo-consent">
+                            <span>Deseo recibir promociones y ofertas especiales por WhatsApp</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-reservation">
+                            <i class="fas fa-calendar-check"></i> Solicitar reserva
+                        </button>
+                    </div>
+                    
+                    <div class="form-note">
+                        <p><small>* Campos obligatorios. Te contactaremos para confirmar tu reserva.</small></p>
+                    </div>
+                </form>
+                
+                <div class="reservation-info">
+                    <div class="info-card">
+                        <h3><i class="fas fa-info-circle"></i> Información importante</h3>
+                        <ul>
+                            <li><i class="fas fa-clock"></i> <strong>Horario de atención:</strong> Lunes a Domingo 12pm - 11pm</li>
+                            <li><i class="fas fa-users"></i> <strong>Capacidad:</strong> Grupos de hasta 20 personas</li>
+                            <li><i class="fas fa-utensils"></i> <strong>Menú especial:</strong> Disponible para eventos</li>
+                            <li><i class="fas fa-parking"></i> <strong>Estacionamiento:</strong> Gratuito para clientes</li>
+                            <li><i class="fas fa-child"></i> <strong>Zona infantil:</strong> Disponible en el local</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-card">
+                        <h3><i class="fas fa-phone-alt"></i> Contacto directo</h3>
+                        <p>¿Prefieres hacer tu reserva por teléfono?</p>
+                        <a href="tel:+584121234567" class="btn btn-secondary btn-call">
+                            <i class="fas fa-phone"></i> Llamar ahora
+                        </a>
+                        <p class="contact-note">También puedes contactarnos por WhatsApp para consultas rápidas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="https://img.icons8.com/color/96/000000/cow.png" alt="Logo El Establo" width="50" height="50">
+                    <h3>El Establo</h3>
+                </div>
+                <div class="footer-info">
+                    <p><i class="fas fa-map-marker-alt"></i> Av. Principal 123, Ciudad</p>
+                    <p><i class="fas fa-phone"></i> +58 412-1234567</p>
+                    <p><i class="fab fa-whatsapp"></i> Pedidos por WhatsApp</p>
+                </div>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <p class="copyright">&copy; 2025 El Establo. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Modales ocultos -->
+    <!-- Modal de personalización -->
+    <div id="customize-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="customize-title">
+        <div class="modal-content large">
+            <button class="close-modal" aria-label="Cerrar">&times;</button>
+            <h2 id="customize-title">Personalizar producto</h2>
+            <div class="customize-body">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary">Cancelar</button>
+                <button class="btn btn-primary">Agregar al carrito</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal del carrito -->
+    <div id="cart-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="cart-title">
+        <div class="modal-content large">
+            <button class="close-modal" aria-label="Cerrar carrito">&times;</button>
+            <h2 id="cart-title">Tu carrito</h2>
+            <div class="cart-body">
+                <p class="empty-cart">El carrito está vacío.</p>
+            </div>
+            <div class="cart-total">
+                <strong>Total: <span id="cart-total">$0.00</span></strong>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary">Seguir comprando</button>
+                <button class="btn btn-primary" id="checkout-btn">Proceder al pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de zona/delivery -->
+    <div id="zone-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="zone-title">
+        <div class="modal-content">
+            <button class="close-modal" aria-label="Cerrar">&times;</button>
+            <h2 id="zone-title">Selecciona tu zona</h2>
+            <div class="zone-options">
+                <label><input type="radio" name="zone" value="centro"> Centro</label>
+                <label><input type="radio" name="zone" value="norte"> Norte</label>
+                <label><input type="radio" name="zone" value="sur"> Sur</label>
+                <label><input type="radio" name="zone" value="este"> Este</label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary">Confirmar zona</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de datos del cliente -->
+    <div id="customer-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="customer-title">
+        <div class="modal-content">
+            <button class="close-modal" aria-label="Cerrar">&times;</button>
+            <h2 id="customer-title">Tus datos</h2>
+            <form id="customer-form">
+                <input type="text" placeholder="Nombre completo" required>
+                <input type="tel" placeholder="Teléfono" required>
+                <input type="text" placeholder="Dirección" required>
+                <textarea placeholder="Notas adicionales"></textarea>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar y continuar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal cross‑sell -->
+    <div id="cross-sell-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="cross-sell-title">
+        <div class="modal-content">
+            <button class="close-modal" aria-label="Cerrar">&times;</button>
+            <h2 id="cross-sell-title">¿Te gustaría agregar?</h2>
+            <div class="cross-sell-items">
+                <div class="cross-item">
+                    <h4>Papas fritas</h4>
+                    <p>$3.00</p>
+                    <button class="btn btn-small">Agregar</button>
+                </div>
+                <div class="cross-item">
+                    <h4>Refresco 500ml</h4>
+                    <p>$2.50</p>
+                    <button class="btn btn-small">Agregar</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary">No, gracias</button>
+                <button class="btn btn-primary">Agregar todo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
