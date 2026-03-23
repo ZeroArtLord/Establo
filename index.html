@@ -45,6 +45,15 @@
                     <img src="https://img.icons8.com/color/96/000000/cow.png" alt="Logo El Establo" width="60" height="60">
                     <h1>El Establo</h1>
                 </div>
+                <nav class="top-links" aria-label="Navegación principal">
+                    <a href="index.html" class="top-link">Ordenar</a>
+                    <a href="nosotros.html#reservaciones" class="top-link">Reservaciones</a>
+                    <a href="nosotros.html#quienes-somos" class="top-link">Nosotros</a>
+                </nav>
+                <div class="header-search" role="search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="text" placeholder="Buscar" aria-label="Buscar en el menú">
+                </div>
                 <div class="cart-icon" id="cart-icon" role="button" aria-label="Ver carrito" tabindex="0">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count" id="cart-count">0</span>
@@ -56,8 +65,8 @@
     <!-- Navegación sticky -->
     <nav class="sticky-nav" role="navigation" aria-label="Categorías de productos">
         <div class="container">
-            <ul class="nav-list">
-                <li><a href="#promos" class="nav-link">Promos</a></li>
+            <ul class="nav-list nav-tabs">
+                <li><a href="#promos" class="nav-link is-active">Promos</a></li>
                 <li><a href="#hamburguesas" class="nav-link">Hamburguesas</a></li>
                 <li><a href="#tex-mex" class="nav-link">Tex-Mex</a></li>
                 <li><a href="#parrilla" class="nav-link">Parrilla</a></li>
@@ -104,10 +113,10 @@
     <div class="hero-actions">
         <div class="container">
             <div class="hero-buttons">
-                <button class="btn btn-primary btn-hero-action" onclick="document.getElementById('promos').scrollIntoView({ behavior: 'smooth' })">
+                <button class="btn btn-primary btn-hero-action" id="hero-scroll-promos">
                     <i class="fas fa-tags"></i> Ver Promociones
                 </button>
-                <button class="btn btn-primary btn-hero-action" onclick="if(cart.length > 0) { openCartModal(); } else { alert('El carrito está vacío. Agrega productos primero.'); }">
+                <button class="btn btn-primary btn-hero-action" id="hero-open-cart">
                     <i class="fas fa-shopping-cart"></i> Pedir Ahora
                 </button>
             </div>
@@ -196,158 +205,7 @@
         </div>
     </section>
 
-    <!-- Sección Quiénes Somos -->
-    <section id="quienes-somos" class="section" aria-labelledby="quienes-somos-title">
-        <div class="container">
-            <h2 id="quienes-somos-title" class="section-title">Quiénes Somos</h2>
-            <div class="about-grid">
-                <!-- Columna Izquierda: Imagen e Historia -->
-                <div class="about-column about-story">
-                    <div class="about-image">
-                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Interior del restaurante El Establo con ambiente acogedor y familiar">
-                    </div>
-                    <div class="about-text">
-                        <h3>Nuestra Historia</h3>
-                        <p>Desde 2010, <strong>El Establo</strong> ha sido el lugar favorito de las familias para disfrutar de la mejor carne a la parrilla. Nacimos con la pasión por ofrecer cortes de primera calidad, preparados con técnicas tradicionales que resaltan el sabor auténtico de cada pieza. Nuestro ambiente cálido y familiar te hará sentir como en casa, mientras compartes momentos inolvidables con tus seres queridos alrededor de una buena mesa.</p>
-                    </div>
-                </div>
-                
-                <!-- Columna Derecha: Horario y Mapa -->
-                <div class="about-column about-info">
-                    <div class="about-schedule">
-                        <h3><i class="fas fa-clock"></i> Horario de Atención</h3>
-                        <ul class="schedule-list">
-                            <li><span>Lunes a Domingo</span><span>12:00 pm – 11:00 pm</span></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="about-location">
-                        <h3><i class="fas fa-map-marker-alt"></i> Ubicación</h3>
-                        <p class="address">Av. Principal 123, Ciudad</p>
-                        <div class="map-container">
-                            <a href="https://www.google.com/maps/search/?api=1&query=Av.+Principal+123,+Ciudad" target="_blank" rel="noopener noreferrer" class="map-link" aria-label="Ver ubicación en Google Maps">
-                                <iframe 
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.4!2d-66.9!3d10.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDMwJzAwLjAiTiA2NsKwNTQnMDAuMCJX!5e0!3m2!1ses!2sve!4v1600000000000!5m2!1ses!2sve" 
-                                    width="100%" 
-                                    height="250" 
-                                    style="border:0;" 
-                                    allowfullscreen="" 
-                                    loading="lazy" 
-                                    referrerpolicy="no-referrer-when-downgrade"
-                                    title="Mapa de ubicación de El Establo">
-                                </iframe>
-                            </a>
-                        </div>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=Av.+Principal+123,+Ciudad" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-directions">
-                            <i class="fas fa-directions"></i> Cómo llegar
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Sección Reservaciones -->
-    <section id="reservaciones" class="section" aria-labelledby="reservaciones-title">
-        <div class="container">
-            <h2 id="reservaciones-title" class="section-title">Reserva tu mesa</h2>
-            <div class="reservation-container">
-                <form id="reservation-form" class="reservation-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="reservation-name">Nombre completo *</label>
-                            <input type="text" id="reservation-name" name="name" required placeholder="Ej: Juan Pérez">
-                            <small class="error-message" id="reservation-name-error"></small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="reservation-phone">Teléfono *</label>
-                            <input type="tel" id="reservation-phone" name="phone" required placeholder="Ej: 0412-1234567">
-                            <small class="error-message" id="reservation-phone-error"></small>
-                            <small class="hint">Formato: 0412-1234567, 4121234567, +584121234567</small>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="reservation-date">Fecha de reserva *</label>
-                            <input type="date" id="reservation-date" name="date" required>
-                            <small class="error-message" id="reservation-date-error"></small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="reservation-people">Número de personas *</label>
-                            <select id="reservation-people" name="people" required>
-                                <option value="">-- Selecciona --</option>
-                                <option value="2">2 personas</option>
-                                <option value="4">4 personas</option>
-                                <option value="6">6 personas</option>
-                                <option value="8">8 personas</option>
-                                <option value="10">10+ personas</option>
-                            </select>
-                            <small class="error-message" id="reservation-people-error"></small>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reservation-event">Tipo de evento</label>
-                        <select id="reservation-event" name="event">
-                            <option value="">-- Selecciona --</option>
-                            <option value="cumpleaños">Cumpleaños</option>
-                            <option value="aniversario">Aniversario</option>
-                            <option value="corporativo">Corporativo</option>
-                            <option value="cena-privada">Cena privada</option>
-                            <option value="otro">Otro</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reservation-notes">Notas adicionales</label>
-                        <textarea id="reservation-notes" name="notes" rows="4" placeholder="Ej: Mesa cerca de la ventana, alergias alimentarias, celebración especial..."></textarea>
-                    </div>
-                    
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="reservation-promo-consent" name="promo-consent">
-                            <span>Deseo recibir promociones y ofertas especiales por WhatsApp</span>
-                        </label>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary btn-reservation">
-                            <i class="fas fa-calendar-check"></i> Solicitar reserva
-                        </button>
-                    </div>
-                    
-                    <div class="form-note">
-                        <p><small>* Campos obligatorios. Te contactaremos para confirmar tu reserva.</small></p>
-                    </div>
-                </form>
-                
-                <div class="reservation-info">
-                    <div class="info-card">
-                        <h3><i class="fas fa-info-circle"></i> Información importante</h3>
-                        <ul>
-                            <li><i class="fas fa-clock"></i> <strong>Horario de atención:</strong> Lunes a Domingo 12pm - 11pm</li>
-                            <li><i class="fas fa-users"></i> <strong>Capacidad:</strong> Grupos de hasta 20 personas</li>
-                            <li><i class="fas fa-utensils"></i> <strong>Menú especial:</strong> Disponible para eventos</li>
-                            <li><i class="fas fa-parking"></i> <strong>Estacionamiento:</strong> Gratuito para clientes</li>
-                            <li><i class="fas fa-child"></i> <strong>Zona infantil:</strong> Disponible en el local</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="info-card">
-                        <h3><i class="fas fa-phone-alt"></i> Contacto directo</h3>
-                        <p>¿Prefieres hacer tu reserva por teléfono?</p>
-                        <a href="tel:+584121234567" class="btn btn-secondary btn-call">
-                            <i class="fas fa-phone"></i> Llamar ahora
-                        </a>
-                        <p class="contact-note">También puedes contactarnos por WhatsApp para consultas rápidas.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    
 
     <!-- Footer -->
     <footer class="footer">
@@ -372,6 +230,8 @@
             <p class="copyright">&copy; 2025 El Establo. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <button id="back-to-top" class="back-to-top" aria-label="Volver arriba">↑</button>
 
     <!-- Modales ocultos -->
     <!-- Modal de personalización -->

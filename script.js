@@ -151,6 +151,60 @@ let orderState = {
     total: 0
 };
 
+function normalizeCartItem(item) {
+    if (!item || typeof item !== 'object') return null;
+    if (typeof item.name !== 'string' || !item.name) return null;
+    if (typeof item.price !== 'number' || !isFinite(item.price)) return null;
+    const quantity = Number.isFinite(item.quantity) ? item.quantity : 1;
+    const safeQuantity = Math.max(1, Math.floor(quantity));
+    const basePrice = Number.isFinite(item.basePrice) ? item.basePrice : item.price;
+    const total = Number.isFinite(item.total) ? item.total : item.price * safeQuantity;
+    
+    return {
+        id: item.id || Date.now(),
+        productId: item.productId || null,
+        name: item.name,
+        price: item.price,
+        basePrice: basePrice,
+        quantity: safeQuantity,
+        options: item.options || {},
+        total: total
+    };
+}
+
+function saveCartToStorage() {
+    try {
+        if (cart.length === 0) {
+            localStorage.removeItem(CART_STORAGE_KEY);
+            return;
+        }
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (error) {
+        console.warn('No se pudo guardar el carrito en localStorage', error);
+    }
+}
+
+function loadCartFromStorage() {
+    try {
+        const raw = localStorage.getItem(CART_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        const normalized = parsed.map(normalizeCartItem).filter(Boolean);
+        normalized.forEach(updateCartItemTotals);
+        cart = normalized;
+    } catch (error) {
+        console.warn('No se pudo cargar el carrito desde localStorage', error);
+    }
+}
+
+function updateCartItemTotals(item) {
+    item.total = item.price * item.quantity;
+}
+
+// Persistencia local
+const CART_STORAGE_KEY = 'establo_cart_v1';
+
 // URLs configuradas
 const WHATSAPP_NUMBER = '584121234567'; // Número de ejemplo - REEMPLAZAR CON TU NÚMERO REAL
 const GOOGLE_SHEETS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbw3w5Nr2Q8ueIvKUh1-pMk1BQj-TR5x765ejWLiUkQwWq_qve8m946EFpMCArilSVNF/exec'; // URL de Google Apps Script - REEMPLAZAR CON TU URL (ver INSTRUCCIONES_GOOGLE_APPS_SCRIPT.md)
@@ -192,11 +246,7 @@ function addToCart(product, quantity = 1, options = {}, finalPrice = null) {
     updateCartUI();
     
     // Mostrar notificación con detalles de personalización
-    let notificationMsg = `${product.name} agregado al carrito`;
-    if (options.extras && options.extras.length > 0) {
-        notificationMsg += ` con ${options.extras.length} extra(s)`;
-    }
-    showNotification(notificationMsg);
+    showCartToast(product, cartItem);
 }
 
 // Función para calcular subtotal y total del pedido
@@ -217,11 +267,25 @@ function removeFromCart(index) {
     updateCartUI();
 }
 
+function changeCartQuantity(index, delta) {
+    const item = cart[index];
+    if (!item) return;
+    const nextQty = item.quantity + delta;
+    if (nextQty <= 0) {
+        removeFromCart(index);
+        return;
+    }
+    item.quantity = nextQty;
+    updateCartItemTotals(item);
+    updateCartUI();
+}
+
 // Función para actualizar la UI del carrito
 function updateCartUI() {
     // Actualizar contador del ícono
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     document.getElementById('cart-count').textContent = totalItems;
+    saveCartToStorage();
     
     // Actualizar modal del carrito si está abierto
     updateCartModal();
@@ -233,92 +297,115 @@ function updateCartModal() {
     const emptyCart = document.querySelector('.empty-cart');
     const cartTotalElement = document.getElementById('cart-total');
     
+    calculateOrderTotals();
+    
     if (cart.length === 0) {
         cartBody.innerHTML = '<p class="empty-cart">El carrito está vacío.</p>';
-        cartTotalElement.textContent = '$0.00';
+        cartTotalElement.textContent = 'REF 0.00';
         return;
     }
     
-    // Calcular total
     const total = cart.reduce((sum, item) => sum + item.total, 0);
-    cartTotalElement.textContent = `$${total.toFixed(2)}`;
+    cartTotalElement.textContent = `REF ${total.toFixed(2)}`;
     
-    // Generar HTML de los items del carrito con opciones
-    let cartHTML = '<div class="cart-items">';
+    let cartHTML = `
+        <div class="cart-panel">
+            <div class="cart-panel-header">
+                <h3>Carrito</h3>
+                <button class="close-modal" aria-label="Cerrar carrito">×</button>
+            </div>
+            
+            <div class="cart-panel-info">
+                <div class="cart-info-row">
+                    <span>Entregar en:</span>
+                    <a href="#" class="cart-link">Ingresa tu ubicación</a>
+                </div>
+                <div class="cart-info-row">
+                    <span>Cuando:</span>
+                    <span>De inmediato</span>
+                </div>
+            </div>
+            
+            <div class="cart-alert">
+                <strong>Selecciona tu ubicación para continuar</strong>
+                <span>Necesitamos saber dónde enviar tu pedido</span>
+            </div>
+    `;
+    
+    cartHTML += '<div class="cart-items">';
     
     cart.forEach((item, index) => {
-        // Generar texto de opciones
-        let optionsHTML = '';
-        
+        const product = findProductById(item.productId) || {};
+        const image = product.image || 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+        let optionsText = '';
         if (item.options) {
-            const optionsList = [];
-            
-            // Término de la carne
-            if (item.options.meatDoneness) {
-                const donenessMap = {
-                    'medio': 'Medio',
-                    'tres-cuartos': '3/4',
-                    'bien-cocido': 'Bien cocido'
-                };
-                optionsList.push(`<span class="option-tag">${donenessMap[item.options.meatDoneness]}</span>`);
-            }
-            
-            // Ingredientes para quitar
-            if (item.options.removeItems && item.options.removeItems.length > 0) {
-                item.options.removeItems.forEach(removeItem => {
-                    const removeMap = {
-                        'sin-cebolla': 'Sin cebolla',
-                        'sin-salsas': 'Sin salsas'
-                    };
-                    if (removeMap[removeItem]) {
-                        optionsList.push(`<span class="option-tag remove">${removeMap[removeItem]}</span>`);
-                    }
-                });
-            }
-            
-            // Extras
+            const parts = [];
             if (item.options.extras && item.options.extras.length > 0) {
-                item.options.extras.forEach(extra => {
-                    const extraMap = {
-                        'doble-tocino': 'Doble tocino',
-                        'queso-fundido': 'Queso fundido'
-                    };
-                    if (extraMap[extra.name]) {
-                        optionsList.push(`<span class="option-tag extra">${extraMap[extra.name]} (+$${extra.price.toFixed(2)})</span>`);
-                    }
-                });
+                parts.push(item.options.extras.map(e => e.name).join(', '));
             }
-            
-            // Notas especiales
+            if (item.options.removeItems && item.options.removeItems.length > 0) {
+                parts.push(item.options.removeItems.join(', '));
+            }
             if (item.options.specialNotes) {
-                optionsList.push(`<span class="option-tag notes">Notas: ${item.options.specialNotes}</span>`);
+                parts.push(item.options.specialNotes);
             }
-            
-            if (optionsList.length > 0) {
-                optionsHTML = `<div class="cart-item-options">${optionsList.join('')}</div>`;
-            }
-        }
-        
-        // Mostrar precio con extras si aplica
-        let priceDisplay = `$${item.total.toFixed(2)}`;
-        if (item.price > item.basePrice) {
-            priceDisplay = `<span class="original-price">$${item.basePrice.toFixed(2)}</span> $${item.total.toFixed(2)}`;
+            optionsText = parts.join(' · ');
         }
         
         cartHTML += `
-            <div class="cart-item" data-index="${index}">
-                <div class="cart-item-info">
-                    <h4>${item.name}</h4>
-                    <small>Cantidad: ${item.quantity}</small>
-                    ${optionsHTML}
+            <div class="cart-item kfc-style" data-index="${index}">
+                <img src="${image}" alt="${item.name}" class="cart-item-image">
+                <div class="cart-item-main">
+                    <div class="cart-item-title">${item.name}</div>
+                    <div class="cart-item-sub">${sanitizeHTML(optionsText)}</div>
+                    <div class="cart-item-actions">
+                        <button class="link-btn btn-remove" data-index="${index}">Eliminar</button>
+                    </div>
                 </div>
-                <div class="cart-item-price">${priceDisplay}</div>
-                <button class="btn-remove" data-index="${index}" aria-label="Eliminar">×</button>
+                <div class="cart-item-right">
+                    <div class="cart-item-price">REF ${item.total.toFixed(2)}</div>
+                    <div class="cart-item-quantity" aria-label="Cantidad">
+                        <button class="btn-quantity" data-index="${index}" data-delta="-1" aria-label="Disminuir cantidad">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="btn-quantity" data-index="${index}" data-delta="1" aria-label="Aumentar cantidad">+</button>
+                    </div>
+                </div>
             </div>
         `;
     });
     
     cartHTML += '</div>';
+    
+    cartHTML += `
+        <button class="btn-clear-cart" id="clear-cart">Vaciar carrito</button>
+        <div class="cart-utensils">
+            <label class="utensils-toggle">
+                <span>¿Quieres añadir utensilios?</span>
+                <input type="checkbox" id="utensils-toggle">
+                <span class="switch"></span>
+            </label>
+            <div class="utensils-list">
+                <label><input type="checkbox"> Salsas</label>
+                <label><input type="checkbox"> Cubiertos</label>
+                <label><input type="checkbox"> Servilletas</label>
+            </div>
+        </div>
+        
+        <div class="cart-summary">
+            <div class="summary-row"><span>Subtotal</span><span>REF ${orderState.subtotal.toFixed(2)}</span></div>
+            <div class="summary-row"><span>Envío</span><span>REF ${orderState.deliveryCost.toFixed(2)}</span></div>
+            <div class="summary-row total"><span>Total del pedido</span><span>REF ${orderState.total.toFixed(2)}</span></div>
+        </div>
+    `;
+    
+    cartHTML += `
+        <div class="cart-footer">
+            <button class="btn btn-primary" id="checkout-btn">Ir a pagar</button>
+            <span class="cart-footer-total">REF ${orderState.total.toFixed(2)}</span>
+        </div>
+        </div>
+    `;
+    
     cartBody.innerHTML = cartHTML;
     
     // Agregar event listeners a los botones de eliminar
@@ -328,6 +415,33 @@ function updateCartModal() {
             removeFromCart(index);
         });
     });
+    
+    document.querySelectorAll('.btn-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            const delta = parseInt(this.getAttribute('data-delta'));
+            changeCartQuantity(index, delta);
+        });
+    });
+
+    const clearCartBtn = document.getElementById('clear-cart');
+    if (clearCartBtn) {
+        clearCartBtn.addEventListener('click', function() {
+            cart = [];
+            updateCartUI();
+        });
+    }
+
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', function() {
+            if (cart.length > 0) {
+                openDeliveryModal();
+            } else {
+                showNotification('El carrito está vacío. Agrega productos primero.', 'error');
+            }
+        });
+    }
 }
 
 // 2. Función `renderProducts()` que inyecte las tarjetas en cada sección
@@ -408,73 +522,133 @@ function openCustomizeModal(product) {
     const customizeBody = modal.querySelector('.customize-body');
     
     customizeBody.innerHTML = `
-        <h3>${product.name}</h3>
-        <p class="product-price-modal">Precio base: $${product.price.toFixed(2)}</p>
-        <p>${product.description}</p>
-        <div class="customize-options">
-            <div class="option-group">
-                <h4>Término de la carne</h4>
-                <label>
-                    <input type="radio" name="meat-doneness" value="medio" checked>
-                    Medio
-                </label>
-                <label>
-                    <input type="radio" name="meat-doneness" value="tres-cuartos">
-                    3/4
-                </label>
-                <label>
-                    <input type="radio" name="meat-doneness" value="bien-cocido">
-                    Bien cocido
-                </label>
+        <div class="customize-header">
+            <h3>${product.name}</h3>
+            <p class="product-price-modal">REF ${product.price.toFixed(2)}</p>
+        </div>
+        <div class="customize-layout">
+            <div class="customize-left">
+                <img src="${product.image}" alt="${product.name}" class="customize-image">
+                <p class="customize-desc">${product.description}</p>
             </div>
-            
-            <div class="option-group">
-                <h4>Para quitar</h4>
-                <label>
-                    <input type="checkbox" name="remove-onion" value="sin-cebolla">
-                    Sin cebolla
-                </label>
-                <label>
-                    <input type="checkbox" name="remove-sauces" value="sin-salsas">
-                    Sin salsas
-                </label>
-            </div>
-            
-            <div class="option-group">
-                <h4>Extras (precio adicional)</h4>
-                <label>
-                    <input type="checkbox" name="extra-bacon" value="doble-tocino" data-price="1.50">
-                    Doble tocino (+$1.50)
-                </label>
-                <label>
-                    <input type="checkbox" name="extra-cheese" value="queso-fundido" data-price="1.00">
-                    Queso fundido (+$1.00)
-                </label>
-            </div>
-            
-            <div class="option-group">
-                <h4>Notas especiales</h4>
-                <textarea id="special-notes" placeholder="Ej: salsa aparte, sin pepinillos..." rows="3"></textarea>
-            </div>
-            
-            <div class="price-summary">
-                <p><strong>Precio base:</strong> $${product.price.toFixed(2)}</p>
-                <p><strong>Extras:</strong> <span id="extras-total">$0.00</span></p>
-                <p class="total-price"><strong>Total:</strong> <span id="final-price">$${product.price.toFixed(2)}</span></p>
+            <div class="customize-right">
+                <div class="customize-options">
+                    <div class="option-section">
+                        <div class="option-section-header">
+                            <div>
+                                <h4>Sabor de la salsa 4oz (app)</h4>
+                                <p class="option-required">Es necesario elegir uno</p>
+                            </div>
+                            <span class="option-counter">0 / 1</span>
+                        </div>
+                        <div class="option-list">
+                            <input type="radio" id="meat-medio" name="meat-doneness" value="medio" checked>
+                            <label for="meat-medio" class="option-pill">
+                                <span class="option-text">Salsa secreta 4oz</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                            
+                            <input type="radio" id="meat-tres-cuartos" name="meat-doneness" value="tres-cuartos">
+                            <label for="meat-tres-cuartos" class="option-pill">
+                                <span class="option-text">Salsa búfalo 4oz</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                            
+                            <input type="radio" id="meat-bien-cocido" name="meat-doneness" value="bien-cocido">
+                            <label for="meat-bien-cocido" class="option-pill">
+                                <span class="option-text">Salsa miel mostaza 4oz</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="option-section">
+                        <div class="option-section-header">
+                            <div>
+                                <h4>Para quitar</h4>
+                            </div>
+                        </div>
+                        <div class="option-list">
+                            <input type="checkbox" id="remove-onion" name="remove-onion" value="sin-cebolla">
+                            <label for="remove-onion" class="option-pill">
+                                <span class="option-text">Sin cebolla</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                            
+                            <input type="checkbox" id="remove-sauces" name="remove-sauces" value="sin-salsas">
+                            <label for="remove-sauces" class="option-pill">
+                                <span class="option-text">Sin salsas</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="option-section">
+                        <div class="option-section-header">
+                            <div>
+                                <h4>Extras</h4>
+                            </div>
+                        </div>
+                        <div class="option-list">
+                            <input type="checkbox" id="extra-bacon" name="extra-bacon" value="doble-tocino" data-price="1.50">
+                            <label for="extra-bacon" class="option-pill">
+                                <span class="option-text">Doble tocino</span>
+                                <span class="option-price-inline">+REF 1.50</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                            
+                            <input type="checkbox" id="extra-cheese" name="extra-cheese" value="queso-fundido" data-price="1.00">
+                            <label for="extra-cheese" class="option-pill">
+                                <span class="option-text">Queso fundido</span>
+                                <span class="option-price-inline">+REF 1.00</span>
+                                <span class="option-indicator"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="option-section notes-section">
+                        <label for="special-notes" class="notes-label">Comentarios del producto</label>
+                        <textarea id="special-notes" class="notes-textarea" placeholder="Preferencias, alergias o tus comentarios" rows="3"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
     `;
     
+    const modalActions = modal.querySelector('.modal-actions');
+    modalActions.innerHTML = `
+        <div class="sticky-actions">
+            <div class="qty-stepper" aria-label="Cantidad">
+                <button class="qty-btn" type="button" id="qty-minus">-</button>
+                <span id="qty-value">1</span>
+                <button class="qty-btn" type="button" id="qty-plus">+</button>
+            </div>
+            <button class="btn btn-primary" type="button" id="customize-add">Agregar REF ${product.price.toFixed(2)}</button>
+        </div>
+    `;
+    
     // Configurar botón de agregar al carrito
-    const addButton = modal.querySelector('.btn-primary');
-    addButton.textContent = 'Agregar al carrito';
+    const addButton = modal.querySelector('#customize-add');
     addButton.onclick = function() {
         const options = getCustomizationOptions();
         const finalPrice = calculateFinalPrice(product.price, options);
+        const qty = parseInt(document.getElementById('qty-value').textContent, 10) || 1;
         
-        addToCart(product, 1, options, finalPrice);
+        addToCart(product, qty, options, finalPrice);
         closeModal(modal);
     };
+
+    const qtyMinus = modal.querySelector('#qty-minus');
+    const qtyPlus = modal.querySelector('#qty-plus');
+    const qtyValue = modal.querySelector('#qty-value');
+    qtyMinus.addEventListener('click', function() {
+        const current = parseInt(qtyValue.textContent, 10) || 1;
+        qtyValue.textContent = Math.max(1, current - 1);
+    });
+    qtyPlus.addEventListener('click', function() {
+        const current = parseInt(qtyValue.textContent, 10) || 1;
+        qtyValue.textContent = current + 1;
+    });
     
     // Event listeners para actualizar precio en tiempo real
     setupPriceUpdateListeners(product.price);
@@ -531,9 +705,10 @@ function setupPriceUpdateListeners(basePrice) {
         const options = getCustomizationOptions();
         const extrasTotal = options.extras.reduce((sum, extra) => sum + extra.price, 0);
         const finalPrice = basePrice + extrasTotal;
-        
-        document.getElementById('extras-total').textContent = `$${extrasTotal.toFixed(2)}`;
-        document.getElementById('final-price').textContent = `$${finalPrice.toFixed(2)}`;
+        const addButton = document.getElementById('customize-add');
+        if (addButton) {
+            addButton.textContent = `Agregar REF ${finalPrice.toFixed(2)}`;
+        }
     };
     
     // Escuchar cambios en todos los inputs
@@ -547,8 +722,18 @@ function setupPriceUpdateListeners(basePrice) {
 
 // 4. Evento para abrir el modal del carrito al hacer clic en el ícono
 function setupCartIconListener() {
-    document.getElementById('cart-icon').addEventListener('click', function() {
+    const cartIcon = document.getElementById('cart-icon');
+    if (!cartIcon) return;
+    
+    cartIcon.addEventListener('click', function() {
         openCartModal();
+    });
+    
+    cartIcon.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openCartModal();
+        }
     });
 }
 
@@ -560,12 +745,12 @@ function openCartModal() {
 
 // 5. Evento para cerrar modales al hacer clic en la X o fuera del contenido
 function setupModalCloseListeners() {
-    // Cerrar al hacer clic en X
-    document.querySelectorAll('.close-modal').forEach(button => {
-        button.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            closeModal(modal);
-        });
+    // Cerrar al hacer clic en X (delegado para modales dinámicos)
+    document.addEventListener('click', function(e) {
+        const closeButton = e.target.closest('.close-modal');
+        if (!closeButton) return;
+        const modal = closeButton.closest('.modal');
+        closeModal(modal);
     });
     
     // Cerrar al hacer clic fuera del contenido
@@ -576,6 +761,15 @@ function setupModalCloseListeners() {
             }
         });
     });
+    
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        const activeModal = document.querySelector('.modal.active');
+        if (activeModal) {
+            closeModal(activeModal);
+        }
+    });
 }
 
 // Funciones para abrir/cerrar modales
@@ -584,7 +778,7 @@ function openModal(modalId) {
     if (modal) {
         modal.classList.add('active');
         modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
     }
 }
 
@@ -592,12 +786,13 @@ function closeModal(modal) {
     if (modal) {
         modal.classList.remove('active');
         modal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = 'auto';
+        document.body.classList.remove('modal-open');
     }
 }
 
 // 6. Inicializa el carrusel Swiper con autoplay, loop y paginación
 function initSwiper() {
+    if (!document.querySelector('.swiper')) return;
     const swiper = new Swiper('.swiper', {
         direction: 'horizontal',
         loop: true,
@@ -620,82 +815,82 @@ function initSwiper() {
 // Función para mostrar notificaciones
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <span>${message}</span>
-        <button class="close-notification">&times;</button>
-    `;
+    notification.className = `notification notification--${type}`;
+    notification.setAttribute('role', 'status');
+    notification.setAttribute('aria-live', 'polite');
     
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#27ae60' : '#e67e22'};
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        animation: slideIn 0.3s ease;
-    `;
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
     
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-notification';
+    closeButton.setAttribute('aria-label', 'Cerrar notificación');
+    closeButton.textContent = '×';
+    
+    notification.appendChild(messageSpan);
+    notification.appendChild(closeButton);
     document.body.appendChild(notification);
     
+    const removeNotification = () => {
+        if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+        }
+    };
+    
     // Botón para cerrar
-    notification.querySelector('.close-notification').addEventListener('click', function() {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            if (document.body.contains(notification)) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
+    closeButton.addEventListener('click', function() {
+        notification.classList.add('notification--hide');
+        notification.addEventListener('animationend', removeNotification, { once: true });
     });
     
     // Auto-eliminar después de 4 segundos
     setTimeout(() => {
-        if (document.body.contains(notification)) {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }
+        if (!document.body.contains(notification)) return;
+        notification.classList.add('notification--hide');
+        notification.addEventListener('animationend', removeNotification, { once: true });
     }, 4000);
 }
 
-// Agregar estilos CSS para notificaciones
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    .close-notification {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        line-height: 1;
-        padding: 0;
-        margin: 0;
-    }
-    .product-price-modal {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #e67e22;
-        margin: 10px 0;
-    }
-`;
-document.head.appendChild(style);
+function showCartToast(product, cartItem) {
+    const existing = document.querySelector('.cart-toast');
+    if (existing) existing.remove();
+    
+    calculateOrderTotals();
+    
+    const toast = document.createElement('div');
+    toast.className = 'cart-toast';
+    const image = product.image || 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+    
+    toast.innerHTML = `
+        <div class="cart-toast-header">
+            <strong>Has añadido a tu carrito</strong>
+            <button class="cart-toast-close" aria-label="Cerrar">×</button>
+        </div>
+        <div class="cart-toast-body">
+            <img src="${image}" alt="${product.name}">
+            <div>
+                <div class="cart-toast-title">${product.name}</div>
+                <div class="cart-toast-sub">x${cartItem.quantity} · REF ${cartItem.total.toFixed(2)}</div>
+            </div>
+        </div>
+        <button class="cart-toast-cta" id="open-cart-toast">
+            <span>Ver carrito</span>
+            <span>REF ${orderState.total.toFixed(2)}</span>
+        </button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    toast.querySelector('.cart-toast-close').addEventListener('click', () => toast.remove());
+    toast.querySelector('#open-cart-toast').addEventListener('click', () => {
+        toast.remove();
+        openCartModal();
+    });
+    
+    setTimeout(() => {
+        if (document.body.contains(toast)) toast.remove();
+    }, 5000);
+}
 
 // ============================================
 // FUNCIONES PARA EL FLUJO DE FINALIZACIÓN
@@ -721,7 +916,7 @@ function openDeliveryModal() {
             <div class="delivery-option" data-type="delivery">
                 <h3>Delivery a domicilio</h3>
                 <p>Te llevamos tu pedido hasta la puerta de tu casa</p>
-                <div class="zone-selection" style="display: none;">
+                <div class="zone-selection is-hidden">
                     <label for="zone-select">Selecciona tu zona:</label>
                     <select id="zone-select">
                         <option value="">-- Selecciona una zona --</option>
@@ -760,7 +955,7 @@ function setupDeliveryModalListeners() {
                 const selectedZone = zoneSelect.value;
                 
                 if (!selectedZone) {
-                    alert('Por favor selecciona una zona de delivery.');
+                    showNotification('Por favor selecciona una zona de delivery.', 'error');
                     return;
                 }
                 
@@ -783,13 +978,16 @@ function setupDeliveryModalListeners() {
                 const zoneSelection = this.querySelector('.zone-selection');
                 
                 if (type === 'delivery') {
-                    zoneSelection.style.display = 'block';
+                    zoneSelection.classList.remove('is-hidden');
                 }
                 
                 // Ocultar en otras opciones
                 document.querySelectorAll('.delivery-option').forEach(other => {
                     if (other !== this) {
-                        other.querySelector('.zone-selection').style.display = 'none';
+                        const otherZoneSelection = other.querySelector('.zone-selection');
+                        if (otherZoneSelection) {
+                            otherZoneSelection.classList.add('is-hidden');
+                        }
                     }
                 });
             }
@@ -806,10 +1004,10 @@ function setupDeliveryModalListeners() {
             
             if (cost) {
                 zoneInfo.textContent = `Costo de envío: $${parseFloat(cost).toFixed(2)}`;
-                zoneInfo.style.color = '#e67e22';
-                zoneInfo.style.fontWeight = 'bold';
+                zoneInfo.classList.add('is-active');
             } else {
                 zoneInfo.textContent = '';
+                zoneInfo.classList.remove('is-active');
             }
         });
     }
@@ -864,7 +1062,7 @@ function openCustomerModal() {
         
         // Ocultar errores anteriores y remover clases de error
         document.querySelectorAll('.error-message').forEach(el => {
-            el.style.display = 'none';
+            el.classList.remove('is-visible');
             el.textContent = '';
         });
         
@@ -886,12 +1084,12 @@ function openCustomerModal() {
         const nameInput = document.getElementById('customer-name');
         if (!customerData.name) {
             document.getElementById('name-error').textContent = 'El nombre es obligatorio';
-            document.getElementById('name-error').style.display = 'block';
+            document.getElementById('name-error').classList.add('is-visible');
             nameInput.classList.add('error');
             isValid = false;
         } else if (customerData.name.length < 2) {
             document.getElementById('name-error').textContent = 'El nombre debe tener al menos 2 caracteres';
-            document.getElementById('name-error').style.display = 'block';
+            document.getElementById('name-error').classList.add('is-visible');
             nameInput.classList.add('error');
             isValid = false;
         }
@@ -900,12 +1098,12 @@ function openCustomerModal() {
         const phoneInput = document.getElementById('customer-phone');
         if (!customerData.phone) {
             document.getElementById('phone-error').textContent = 'El teléfono es obligatorio';
-            document.getElementById('phone-error').style.display = 'block';
+            document.getElementById('phone-error').classList.add('is-visible');
             phoneInput.classList.add('error');
             isValid = false;
         } else if (!validatePhone(customerData.phone)) {
             document.getElementById('phone-error').textContent = 'Formato de teléfono inválido. Usa: 0412-1234567, 4121234567, +584121234567';
-            document.getElementById('phone-error').style.display = 'block';
+            document.getElementById('phone-error').classList.add('is-visible');
             phoneInput.classList.add('error');
             isValid = false;
         }
@@ -914,7 +1112,7 @@ function openCustomerModal() {
         const emailInput = document.getElementById('customer-email');
         if (customerData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.email)) {
             document.getElementById('email-error').textContent = 'Formato de email inválido';
-            document.getElementById('email-error').style.display = 'block';
+            document.getElementById('email-error').classList.add('is-visible');
             emailInput.classList.add('error');
             isValid = false;
         }
@@ -1050,6 +1248,47 @@ function validatePhone(phone) {
     return phoneRegex.test(phone.replace(/\s+/g, ''));
 }
 
+async function fetchWithRetry(url, options, config = {}) {
+    const retries = Number.isFinite(config.retries) ? config.retries : 2;
+    const backoffMs = Number.isFinite(config.backoffMs) ? config.backoffMs : 600;
+    const timeoutMs = Number.isFinite(config.timeoutMs) ? config.timeoutMs : 8000;
+    let lastError = null;
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                return response;
+            }
+            
+            if (response.status < 500) {
+                return response;
+            }
+            
+            lastError = new Error(`HTTP ${response.status}`);
+        } catch (error) {
+            lastError = error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+        
+        if (attempt < retries) {
+            const delay = backoffMs * Math.pow(2, attempt);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    
+    throw lastError || new Error('Request failed');
+}
+
 // 7. Función para enviar datos a Google Sheets
 async function saveToGoogleSheets(customerData, orderSummary) {
     try {
@@ -1081,7 +1320,7 @@ async function saveToGoogleSheets(customerData, orderSummary) {
         };
         
         // Enviar a Google Sheets via Apps Script
-        const response = await fetch(GOOGLE_SHEETS_WEBHOOK, {
+        const response = await fetchWithRetry(GOOGLE_SHEETS_WEBHOOK, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1105,12 +1344,12 @@ async function saveToGoogleSheets(customerData, orderSummary) {
 // 8. Función para generar y enviar mensaje de WhatsApp
 async function sendWhatsAppOrder() {
     if (cart.length === 0) {
-        alert('El carrito está vacío.');
+        showNotification('El carrito está vacío.', 'error');
         return;
     }
     
     if (!orderState.customerData) {
-        alert('Faltan datos del cliente.');
+        showNotification('Faltan datos del cliente.', 'error');
         return;
     }
     
@@ -1172,29 +1411,29 @@ async function sendWhatsAppOrder() {
     }
     
     // Construir mensaje claro y profesional
-    let message = `*NUEVO PEDIDO - EL ESTABLO*%0A%0A`;
+    let message = `*NUEVO PEDIDO - EL ESTABLO*\n\n`;
     
     // Datos del cliente
-    message += `*Cliente:* ${orderState.customerData.name}%0A`;
-    message += `*Teléfono:* ${orderState.customerData.phone}%0A`;
+    message += `*Cliente:* ${orderState.customerData.name}\n`;
+    message += `*Teléfono:* ${orderState.customerData.phone}\n`;
     if (orderState.customerData.email) {
-        message += `*Email:* ${orderState.customerData.email}%0A`;
+        message += `*Email:* ${orderState.customerData.email}\n`;
     }
     
     // Tipo de entrega
     if (orderState.deliveryType === 'retiro') {
-        message += `*Tipo de entrega:* Retiro en local%0A`;
+        message += `*Tipo de entrega:* Retiro en local\n`;
     } else {
-        message += `*Tipo de entrega:* Delivery%0A`;
-        message += `*Zona:* ${orderState.deliveryZone.name}%0A`;
-        message += `*Costo de envío:* $${orderState.deliveryCost.toFixed(2)}%0A`;
+        message += `*Tipo de entrega:* Delivery\n`;
+        message += `*Zona:* ${orderState.deliveryZone.name}\n`;
+        message += `*Costo de envío:* $${orderState.deliveryCost.toFixed(2)}\n`;
     }
     
-    message += `%0A*DETALLE DEL PEDIDO:*%0A`;
+    message += `\n*DETALLE DEL PEDIDO:*\n`;
     
     // Productos con personalizaciones claras
     cart.forEach((item, index) => {
-        message += `${index + 1}. *${item.name}* x${item.quantity} - $${item.total.toFixed(2)}%0A`;
+        message += `${index + 1}. *${item.name}* x${item.quantity} - $${item.total.toFixed(2)}\n`;
         
         // Personalizaciones claras sin emojis
         if (item.options) {
@@ -1205,7 +1444,7 @@ async function sendWhatsAppOrder() {
                     'tres-cuartos': '3/4',
                     'bien-cocido': 'Bien cocido'
                 };
-                message += `   - Término: ${donenessMap[item.options.meatDoneness]}%0A`;
+                message += `   - Término: ${donenessMap[item.options.meatDoneness]}\n`;
             }
             
             // Ingredientes para quitar
@@ -1215,7 +1454,7 @@ async function sendWhatsAppOrder() {
                     'sin-salsas': 'Sin salsas'
                 };
                 const removeText = item.options.removeItems.map(item => removeMap[item] || item).join(', ');
-                message += `   - Quitar: ${removeText}%0A`;
+                message += `   - Quitar: ${removeText}\n`;
             }
             
             // Extras con precios
@@ -1228,32 +1467,32 @@ async function sendWhatsAppOrder() {
                     const extraName = extraMap[extra.name] || extra.name;
                     return `${extraName} (+$${extra.price.toFixed(2)})`;
                 }).join(', ');
-                message += `   - Extras: ${extrasText}%0A`;
+                message += `   - Extras: ${extrasText}\n`;
             }
             
             // Notas especiales
             if (item.options.specialNotes) {
-                message += `   - Notas: ${item.options.specialNotes}%0A`;
+                message += `   - Notas: ${item.options.specialNotes}\n`;
             }
         }
         
         // Mostrar precio con extras si aplica
         if (item.price > item.basePrice) {
-            message += `   - Precio base: $${item.basePrice.toFixed(2)} (con extras: $${item.price.toFixed(2)})%0A`;
+            message += `   - Precio base: $${item.basePrice.toFixed(2)} (con extras: $${item.price.toFixed(2)})\n`;
         }
     });
     
     // Resumen de precios claro
-    message += `%0A*RESUMEN DE PAGO:*%0A`;
-    message += `Subtotal: $${orderState.subtotal.toFixed(2)}%0A`;
+    message += `\n*RESUMEN DE PAGO:*\n`;
+    message += `Subtotal: $${orderState.subtotal.toFixed(2)}\n`;
     if (orderState.deliveryCost > 0) {
-        message += `Costo de envío: $${orderState.deliveryCost.toFixed(2)}%0A`;
+        message += `Costo de envío: $${orderState.deliveryCost.toFixed(2)}\n`;
     }
-    message += `*TOTAL: $${orderState.total.toFixed(2)}*%0A%0A`;
+    message += `*TOTAL: $${orderState.total.toFixed(2)}*\n\n`;
     
     // Información adicional
-    message += `Pedido generado desde la web de El Establo%0A`;
-    message += `Hora: ${new Date().toLocaleTimeString('es-VE')}%0A`;
+    message += `Pedido generado desde la web de El Establo\n`;
+    message += `Hora: ${new Date().toLocaleTimeString('es-VE')}\n`;
     message += `Fecha: ${new Date().toLocaleDateString('es-VE')}`;
     
     // Codificar mensaje
@@ -1385,7 +1624,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (cart.length > 0) {
                 openDeliveryModal();
             } else {
-                alert('El carrito está vacío. Agrega productos primero.');
+                showNotification('El carrito está vacío. Agrega productos primero.', 'error');
             }
         });
     }
@@ -1393,13 +1632,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar botones "Ordenar ahora" en el hero
     document.querySelectorAll('.btn-hero').forEach(button => {
         button.addEventListener('click', function() {
-            alert('Redirigiendo a la sección de promociones...');
             document.getElementById('promos').scrollIntoView({ behavior: 'smooth' });
         });
     });
     
+    // Botones de acción debajo del hero
+    const scrollPromosBtn = document.getElementById('hero-scroll-promos');
+    if (scrollPromosBtn) {
+        scrollPromosBtn.addEventListener('click', function() {
+            document.getElementById('promos').scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+    
+    const heroOpenCartBtn = document.getElementById('hero-open-cart');
+    if (heroOpenCartBtn) {
+        heroOpenCartBtn.addEventListener('click', function() {
+            if (cart.length > 0) {
+                openCartModal();
+            } else {
+                showNotification('El carrito está vacío. Agrega productos primero.', 'error');
+            }
+        });
+    }
+    
     // Configurar formulario de reservaciones
     setupReservationForm();
+    
+    // Cargar carrito desde localStorage
+    loadCartFromStorage();
     
     // Inicializar contador del carrito
     updateCartUI();
@@ -1409,6 +1669,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('El Establo - Página cargada correctamente');
     console.log('Productos cargados:', Object.keys(products).reduce((acc, cat) => acc + products[cat].length, 0));
+
+    // Botón volver arriba
+    const backToTop = document.getElementById('back-to-top');
+    if (backToTop) {
+        const toggleBackToTop = () => {
+            if (window.scrollY > 400) {
+                backToTop.classList.add('is-visible');
+            } else {
+                backToTop.classList.remove('is-visible');
+            }
+        };
+        toggleBackToTop();
+        window.addEventListener('scroll', toggleBackToTop);
+        backToTop.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // Mostrar tabs de menú solo al hacer scroll
+    const stickyNav = document.querySelector('.sticky-nav');
+    if (stickyNav) {
+        const toggleStickyNav = () => {
+            if (window.scrollY > 120) {
+                stickyNav.classList.add('is-visible');
+            } else {
+                stickyNav.classList.remove('is-visible');
+            }
+        };
+        toggleStickyNav();
+        window.addEventListener('scroll', toggleStickyNav);
+    }
 });
 
 // ============================================
@@ -1433,7 +1724,7 @@ function setupReservationForm() {
         // Ocultar errores anteriores y remover clases de error
         document.querySelectorAll('#reservation-form .error-message').forEach(el => {
             el.textContent = '';
-            el.style.display = 'none';
+            el.classList.remove('is-visible');
         });
         
         document.querySelectorAll('#reservation-form input, #reservation-form select').forEach(input => {
@@ -1459,12 +1750,12 @@ function setupReservationForm() {
         const nameInput = document.getElementById('reservation-name');
         if (!reservationData.name) {
             document.getElementById('reservation-name-error').textContent = 'El nombre es obligatorio';
-            document.getElementById('reservation-name-error').style.display = 'block';
+            document.getElementById('reservation-name-error').classList.add('is-visible');
             nameInput.classList.add('error');
             isValid = false;
         } else if (reservationData.name.length < 2) {
             document.getElementById('reservation-name-error').textContent = 'El nombre debe tener al menos 2 caracteres';
-            document.getElementById('reservation-name-error').style.display = 'block';
+            document.getElementById('reservation-name-error').classList.add('is-visible');
             nameInput.classList.add('error');
             isValid = false;
         }
@@ -1473,12 +1764,12 @@ function setupReservationForm() {
         const phoneInput = document.getElementById('reservation-phone');
         if (!reservationData.phone) {
             document.getElementById('reservation-phone-error').textContent = 'El teléfono es obligatorio';
-            document.getElementById('reservation-phone-error').style.display = 'block';
+            document.getElementById('reservation-phone-error').classList.add('is-visible');
             phoneInput.classList.add('error');
             isValid = false;
         } else if (!validatePhone(reservationData.phone)) {
             document.getElementById('reservation-phone-error').textContent = 'Formato de teléfono inválido. Usa: 0412-1234567, 4121234567, +584121234567';
-            document.getElementById('reservation-phone-error').style.display = 'block';
+            document.getElementById('reservation-phone-error').classList.add('is-visible');
             phoneInput.classList.add('error');
             isValid = false;
         }
@@ -1487,7 +1778,7 @@ function setupReservationForm() {
         const dateInput = document.getElementById('reservation-date');
         if (!reservationData.date) {
             document.getElementById('reservation-date-error').textContent = 'La fecha es obligatoria';
-            document.getElementById('reservation-date-error').style.display = 'block';
+            document.getElementById('reservation-date-error').classList.add('is-visible');
             dateInput.classList.add('error');
             isValid = false;
         }
@@ -1496,7 +1787,7 @@ function setupReservationForm() {
         const peopleInput = document.getElementById('reservation-people');
         if (!reservationData.people) {
             document.getElementById('reservation-people-error').textContent = 'El número de personas es obligatorio';
-            document.getElementById('reservation-people-error').style.display = 'block';
+            document.getElementById('reservation-people-error').classList.add('is-visible');
             peopleInput.classList.add('error');
             isValid = false;
         }
@@ -1559,7 +1850,7 @@ async function saveReservationToSheets(reservationData) {
         };
         
         // Enviar a Google Sheets via Apps Script
-        const response = await fetch(GOOGLE_SHEETS_WEBHOOK, {
+        const response = await fetchWithRetry(GOOGLE_SHEETS_WEBHOOK, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1601,29 +1892,29 @@ function sendReservationWhatsApp(reservationData) {
     });
     
     // Construir mensaje claro y profesional
-    let message = `*NUEVA SOLICITUD DE RESERVA - EL ESTABLO*%0A%0A`;
+    let message = `*NUEVA SOLICITUD DE RESERVA - EL ESTABLO*\n\n`;
     
     // Datos de la reserva
-    message += `*Cliente:* ${reservationData.name}%0A`;
-    message += `*Teléfono:* ${reservationData.phone}%0A`;
-    message += `*Fecha:* ${formattedDate}%0A`;
-    message += `*Personas:* ${reservationData.people} ${reservationData.people === '10' ? '+' : ''} personas%0A`;
+    message += `*Cliente:* ${reservationData.name}\n`;
+    message += `*Teléfono:* ${reservationData.phone}\n`;
+    message += `*Fecha:* ${formattedDate}\n`;
+    message += `*Personas:* ${reservationData.people} ${reservationData.people === '10' ? '+' : ''} personas\n`;
     
     if (reservationData.event) {
-        message += `*Tipo de evento:* ${eventMap[reservationData.event] || reservationData.event}%0A`;
+        message += `*Tipo de evento:* ${eventMap[reservationData.event] || reservationData.event}\n`;
     }
     
     if (reservationData.notes) {
-        message += `*Notas especiales:* ${reservationData.notes}%0A`;
+        message += `*Notas especiales:* ${reservationData.notes}\n`;
     }
     
-    message += `*Consentimiento promociones:* ${reservationData.promoConsent ? 'Sí' : 'No'}%0A`;
+    message += `*Consentimiento promociones:* ${reservationData.promoConsent ? 'Sí' : 'No'}\n`;
     
     // Información adicional
-    message += `%0A*INFORMACIÓN ADICIONAL:*%0A`;
-    message += `Solicitud generada desde la web de El Establo%0A`;
-    message += `Hora de solicitud: ${new Date().toLocaleTimeString('es-VE')}%0A`;
-    message += `Fecha de solicitud: ${new Date().toLocaleDateString('es-VE')}%0A`;
+    message += `\n*INFORMACIÓN ADICIONAL:*\n`;
+    message += `Solicitud generada desde la web de El Establo\n`;
+    message += `Hora de solicitud: ${new Date().toLocaleTimeString('es-VE')}\n`;
+    message += `Fecha de solicitud: ${new Date().toLocaleDateString('es-VE')}\n`;
     message += `ID de reserva: RES-${Date.now().toString().slice(-6)}`;
     
     // Simular envío a Google Sheets si la URL no está configurada
