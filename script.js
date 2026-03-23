@@ -6,139 +6,8 @@ function sanitizeHTML(text) {
     return div.innerHTML;
 }
 
-// 2. Define un objeto `products` que contenga al menos 3 productos de ejemplo por categoría
-const products = {
-    promos: [
-        {
-            id: 1,
-            name: "Promo Doble Establo",
-            price: 15.99,
-            image: "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "2 hamburguesas + papas + 2 bebidas",
-            category: "promos"
-        },
-        {
-            id: 2,
-            name: "Tacos Night",
-            price: 12.50,
-            image: "https://images.unsplash.com/photo-1565299507177-b0ac66763828?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "6 tacos + guacamole + salsa especial",
-            category: "promos"
-        },
-        {
-            id: 3,
-            name: "Parrilla Familiar",
-            price: 24.99,
-            image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Carne, pollo, chorizo, ensalada y arepas",
-            category: "promos"
-        }
-    ],
-    hamburguesas: [
-        {
-            id: 4,
-            name: "Hamburguesa Clásica",
-            price: 8.99,
-            image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Carne, queso, lechuga, tomate, cebolla",
-            category: "hamburguesas"
-        },
-        {
-            id: 5,
-            name: "Hamburguesa BBQ",
-            price: 10.50,
-            image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Carne, queso cheddar, bacon, salsa BBQ",
-            category: "hamburguesas"
-        },
-        {
-            id: 6,
-            name: "Hamburguesa Veggie",
-            price: 9.75,
-            image: "https://images.unsplash.com/photo-1559314809-2b99056a8c4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Medallón vegetal, aguacate, espinacas",
-            category: "hamburguesas"
-        }
-    ],
-    "tex-mex": [
-        {
-            id: 7,
-            name: "Tacos de Carne",
-            price: 7.50,
-            image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "3 tacos con carne molida, cilantro, cebolla",
-            category: "tex-mex"
-        },
-        {
-            id: 8,
-            name: "Burrito Grande",
-            price: 9.25,
-            image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Tortilla gigante rellena de pollo, frijoles, arroz",
-            category: "tex-mex"
-        },
-        {
-            id: 9,
-            name: "Nachos Supreme",
-            price: 8.00,
-            image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Nachos con queso, guacamole, jalapeños",
-            category: "tex-mex"
-        }
-    ],
-    parrilla: [
-        {
-            id: 10,
-            name: "Churrasco",
-            price: 14.99,
-            image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Corte de res, arepa, ensalada, chimichurri",
-            category: "parrilla"
-        },
-        {
-            id: 11,
-            name: "Pollo a la Parrilla",
-            price: 11.50,
-            image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Pechuga marinada, vegetales asados",
-            category: "parrilla"
-        },
-        {
-            id: 12,
-            name: "Costillas BBQ",
-            price: 16.75,
-            image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Costillas de cerdo con salsa BBQ casera",
-            category: "parrilla"
-        }
-    ],
-    bebidas: [
-        {
-            id: 13,
-            name: "Refresco 500ml",
-            price: 2.50,
-            image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Coca‑Cola, Pepsi, Sprite, Fanta",
-            category: "bebidas"
-        },
-        {
-            id: 14,
-            name: "Jugo Natural",
-            price: 3.25,
-            image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "Naranja, piña, fresa, maracuyá",
-            category: "bebidas"
-        },
-        {
-            id: 15,
-            name: "Cerveza Artesanal",
-            price: 4.50,
-            image: "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-            description: "IPA, Lager, Stout, Amber Ale",
-            category: "bebidas"
-        }
-    ]
-};
+// Datos cargados desde JSON
+let products = {};
 
 // 3. Carrito (array `cart`) con funciones y estado del pedido
 let cart = [];
@@ -205,26 +74,12 @@ function updateCartItemTotals(item) {
 // Persistencia local
 const CART_STORAGE_KEY = 'establo_cart_v1';
 
-// URLs configuradas
-const WHATSAPP_NUMBER = '584121234567'; // Número de ejemplo - REEMPLAZAR CON TU NÚMERO REAL
-const GOOGLE_SHEETS_WEBHOOK = 'https://script.google.com/macros/s/AKfycbw3w5Nr2Q8ueIvKUh1-pMk1BQj-TR5x765ejWLiUkQwWq_qve8m946EFpMCArilSVNF/exec'; // URL de Google Apps Script - REEMPLAZAR CON TU URL (ver INSTRUCCIONES_GOOGLE_APPS_SCRIPT.md)
-
-// Zonas de delivery con precios
-const deliveryZones = [
-    { id: 'la-beatriz', name: 'La Beatriz', cost: 2.00 },
-    { id: 'centro', name: 'Centro', cost: 1.00 },
-    { id: 'plata-1', name: 'Plata 1', cost: 1.50 },
-    { id: 'plata-2', name: 'Plata 2', cost: 1.75 },
-    { id: 'los-naranjos', name: 'Los Naranjos', cost: 2.25 }
-];
-
-// Productos para cross-sell
-const crossSellProducts = [
-    { id: 101, name: 'Papas fritas', price: 3.00, description: 'Porción grande con salsa' },
-    { id: 102, name: 'Aros de cebolla', price: 2.50, description: 'Crujientes con dip de mayonesa' },
-    { id: 103, name: 'Refresco 500ml', price: 2.00, description: 'Coca-Cola, Pepsi o Sprite' },
-    { id: 104, name: 'Postre de chocolate', price: 4.50, description: 'Brownie con helado' }
-];
+// Configuración cargada desde JSON
+let WHATSAPP_NUMBER = '';
+let GOOGLE_SHEETS_WEBHOOK = '';
+let deliveryZones = [];
+let crossSellProducts = [];
+let dailyPromoProduct = null;
 
 // Función para agregar un item al carrito (actualizada)
 function addToCart(product, quantity = 1, options = {}, finalPrice = null) {
@@ -514,6 +369,25 @@ function findProductById(id) {
         if (product) return product;
     }
     return null;
+}
+
+async function loadMenuData() {
+    try {
+        const response = await fetch('data/menu.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        products = data.products || {};
+        WHATSAPP_NUMBER = data.whatsappNumber || '';
+        GOOGLE_SHEETS_WEBHOOK = data.googleSheetsWebhook || '';
+        deliveryZones = data.deliveryZones || [];
+        crossSellProducts = data.crossSellProducts || [];
+        dailyPromoProduct = data.dailyPromoProduct || null;
+        return true;
+    } catch (error) {
+        console.error('Error cargando menu.json:', error);
+        showNotification('No se pudo cargar el menú. Intenta recargar.', 'error');
+        return false;
+    }
 }
 
 // 7. Modal de personalización ampliado
@@ -1525,22 +1399,14 @@ async function sendWhatsAppOrder() {
 // FUNCIONES PARA EL POP-UP DE ENTRADA
 // ============================================
 
-// Producto promocional del día
-const dailyPromoProduct = {
-    id: 'promo_dia',
-    name: 'Costillas BBQ con papas',
-    price: 10.00,
-    description: 'Costillas BBQ con papas fritas -20% de descuento',
-    category: 'promos',
-    image: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=80'
-};
+// Producto promocional del día se carga desde JSON
 
 // Función para mostrar el pop-up de entrada
 function showEntryPopup() {
     // Verificar si ya se mostró en esta sesión
     const popupShown = sessionStorage.getItem('entryPopupShown');
     
-    if (!popupShown) {
+    if (!popupShown && dailyPromoProduct) {
         // Mostrar pop-up después de 1 segundo
         setTimeout(() => {
             const popup = document.getElementById('entry-popup');
@@ -1612,29 +1478,23 @@ function showEntryPopup() {
 
 // Inicialización cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
+    initApp();
+});
+
+async function initApp() {
     // 6. Inicializar Swiper
     initSwiper();
     
-    // 2. Renderizar productos
-    renderProducts();
+    const loaded = await loadMenuData();
+    if (loaded) {
+        renderProducts();
+    }
     
     // 4. Configurar evento del ícono del carrito
     setupCartIconListener();
     
     // 5. Configurar eventos para cerrar modales
     setupModalCloseListeners();
-    
-    // Configurar botón "Finalizar pedido" en el carrito
-    const checkoutBtn = document.getElementById('checkout-btn');
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', function() {
-            if (cart.length > 0) {
-                openDeliveryModal();
-            } else {
-                showNotification('El carrito está vacío. Agrega productos primero.', 'error');
-            }
-        });
-    }
     
     // Configurar botones "Ordenar ahora" en el hero
     document.querySelectorAll('.btn-hero').forEach(button => {
@@ -1699,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (stickyNav) {
         stickyNav.classList.add('is-visible');
     }
-});
+}
 
 // ============================================
 // FUNCIONES PARA RESERVACIONES

@@ -1,0 +1,157 @@
+{
+  "whatsappNumber": "584121234567",
+  "googleSheetsWebhook": "https://script.google.com/macros/s/AKfycbw3w5Nr2Q8ueIvKUh1-pMk1BQj-TR5x765ejWLiUkQwWq_qve8m946EFpMCArilSVNF/exec",
+  "dailyPromoProduct": {
+    "id": "promo_dia",
+    "name": "Costillas BBQ con papas",
+    "price": 10.0,
+    "description": "Costillas BBQ con papas fritas -20% de descuento",
+    "category": "promos",
+    "image": "https://images.unsplash.com/photo-1527477396000-e27163b481c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=80"
+  },
+  "deliveryZones": [
+    { "id": "la-beatriz", "name": "La Beatriz", "cost": 2.0 },
+    { "id": "centro", "name": "Centro", "cost": 1.0 },
+    { "id": "plata-1", "name": "Plata 1", "cost": 1.5 },
+    { "id": "plata-2", "name": "Plata 2", "cost": 1.75 },
+    { "id": "los-naranjos", "name": "Los Naranjos", "cost": 2.25 }
+  ],
+  "crossSellProducts": [
+    { "id": 101, "name": "Papas fritas", "price": 3.0, "description": "Porción grande con salsa" },
+    { "id": 102, "name": "Aros de cebolla", "price": 2.5, "description": "Crujientes con dip de mayonesa" },
+    { "id": 103, "name": "Refresco 500ml", "price": 2.0, "description": "Coca-Cola, Pepsi o Sprite" },
+    { "id": 104, "name": "Postre de chocolate", "price": 4.5, "description": "Brownie con helado" }
+  ],
+  "products": {
+    "promos": [
+      {
+        "id": 1,
+        "name": "Promo Doble Establo",
+        "price": 15.99,
+        "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "2 hamburguesas + papas + 2 bebidas",
+        "category": "promos"
+      },
+      {
+        "id": 2,
+        "name": "Tacos Night",
+        "price": 12.5,
+        "image": "https://images.unsplash.com/photo-1565299507177-b0ac66763828?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "6 tacos + guacamole + salsa especial",
+        "category": "promos"
+      },
+      {
+        "id": 3,
+        "name": "Parrilla Familiar",
+        "price": 24.99,
+        "image": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Carne, pollo, chorizo, ensalada y arepas",
+        "category": "promos"
+      }
+    ],
+    "hamburguesas": [
+      {
+        "id": 4,
+        "name": "Hamburguesa Clásica",
+        "price": 8.99,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Carne, queso, lechuga, tomate, cebolla",
+        "category": "hamburguesas"
+      },
+      {
+        "id": 5,
+        "name": "Hamburguesa BBQ",
+        "price": 10.5,
+        "image": "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Carne, queso cheddar, bacon, salsa BBQ",
+        "category": "hamburguesas"
+      },
+      {
+        "id": 6,
+        "name": "Hamburguesa Veggie",
+        "price": 9.75,
+        "image": "https://images.unsplash.com/photo-1559314809-2b99056a8c4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Medallón vegetal, aguacate, espinacas",
+        "category": "hamburguesas"
+      }
+    ],
+    "tex-mex": [
+      {
+        "id": 7,
+        "name": "Tacos de Carne",
+        "price": 7.5,
+        "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "3 tacos con carne molida, cilantro, cebolla",
+        "category": "tex-mex"
+      },
+      {
+        "id": 8,
+        "name": "Burrito Grande",
+        "price": 9.25,
+        "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Tortilla gigante rellena de pollo, frijoles, arroz",
+        "category": "tex-mex"
+      },
+      {
+        "id": 9,
+        "name": "Nachos Supreme",
+        "price": 8.0,
+        "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Nachos con queso, guacamole, jalapeños",
+        "category": "tex-mex"
+      }
+    ],
+    "parrilla": [
+      {
+        "id": 10,
+        "name": "Churrasco",
+        "price": 14.99,
+        "image": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Corte de res, arepa, ensalada, chimichurri",
+        "category": "parrilla"
+      },
+      {
+        "id": 11,
+        "name": "Pollo a la Parrilla",
+        "price": 11.5,
+        "image": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Pechuga marinada, vegetales asados",
+        "category": "parrilla"
+      },
+      {
+        "id": 12,
+        "name": "Costillas BBQ",
+        "price": 16.75,
+        "image": "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Costillas de cerdo con salsa BBQ casera",
+        "category": "parrilla"
+      }
+    ],
+    "bebidas": [
+      {
+        "id": 13,
+        "name": "Refresco 500ml",
+        "price": 2.5,
+        "image": "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Coca-Cola, Pepsi, Sprite, Fanta",
+        "category": "bebidas"
+      },
+      {
+        "id": 14,
+        "name": "Jugo Natural",
+        "price": 3.25,
+        "image": "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "Naranja, piña, fresa, maracuyá",
+        "category": "bebidas"
+      },
+      {
+        "id": 15,
+        "name": "Cerveza Artesanal",
+        "price": 4.5,
+        "image": "https://images.unsplash.com/photo-1600788886242-5c96aabe3757?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+        "description": "IPA, Lager, Stout, Amber Ale",
+        "category": "bebidas"
+      }
+    ]
+  }
+}
