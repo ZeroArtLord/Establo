@@ -1532,7 +1532,7 @@ const dailyPromoProduct = {
     price: 10.00,
     description: 'Costillas BBQ con papas fritas -20% de descuento',
     category: 'promos',
-    image: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
+    image: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=80'
 };
 
 // Función para mostrar el pop-up de entrada
@@ -1556,6 +1556,13 @@ function showEntryPopup() {
                         // Abrir modal de personalización para el producto promocional
                         openCustomizeModal(dailyPromoProduct);
                     });
+                }
+
+                // Imagen de la promo
+                const popupImage = document.getElementById('popup-image');
+                if (popupImage) {
+                    popupImage.src = dailyPromoProduct.image;
+                    popupImage.alt = dailyPromoProduct.name;
                 }
                 
                 // Configurar botón "Agregar sin personalizar"
