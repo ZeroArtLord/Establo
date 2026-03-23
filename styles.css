@@ -164,16 +164,11 @@ body {
     z-index: 999;
     box-shadow: none;
     transition: top 0.3s ease;
-    border-bottom: none;
-    max-height: 0;
-    overflow: hidden;
-    padding: 0;
-    transition: max-height 0.2s ease, padding 0.2s ease;
+    border-bottom: 1px solid #eeeeee;
+    padding: 8px 0;
 }
 
 .sticky-nav.is-visible {
-    max-height: 200px;
-    padding: 8px 0;
     border-bottom: 1px solid #eeeeee;
 }
 
@@ -1450,14 +1445,9 @@ body {
         top: var(--mobile-header-h);
         background: #ffffff;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
-        border-bottom: none;
-        padding: 0;
-        height: auto;
-    }
-
-    .sticky-nav.is-visible {
-        padding: 8px 0 6px;
         border-bottom: 1px solid #e9e9e9;
+        padding: 8px 0 6px;
+        height: auto;
     }
 
     .nav-list {
@@ -1549,30 +1539,35 @@ body {
     }
 
     .product-card {
-        border-radius: 18px;
+        border-radius: 16px;
         overflow: hidden;
         box-shadow: none;
+        grid-template-columns: 90px 1fr;
+        padding: 12px;
+        gap: 8px 12px;
     }
 
     .product-image {
-        height: 210px;
+        height: 90px;
+        width: 90px;
+        border-radius: 12px;
     }
 
     .product-name {
-        font-size: 1.15rem;
+        font-size: 0.95rem;
     }
 
     .product-price {
-        font-size: 1.4rem;
+        font-size: 0.9rem;
     }
 
     .btn-product {
-        margin: 0 16px 16px;
+        margin: 4px 0 0;
         border-radius: 999px;
-        padding: 12px 20px;
-        font-size: 0.95rem;
+        padding: 8px 14px;
+        font-size: 0.8rem;
         box-shadow: none;
-        width: calc(100% - 32px);
+        width: fit-content;
     }
 
     /* Modales en móvil estilo sheet */

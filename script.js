@@ -1687,18 +1687,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Mostrar tabs de menú solo al hacer scroll
+    // Tabs de menú visibles siempre
     const stickyNav = document.querySelector('.sticky-nav');
     if (stickyNav) {
-        const toggleStickyNav = () => {
-            if (window.scrollY > 120) {
-                stickyNav.classList.add('is-visible');
-            } else {
-                stickyNav.classList.remove('is-visible');
-            }
-        };
-        toggleStickyNav();
-        window.addEventListener('scroll', toggleStickyNav);
+        stickyNav.classList.add('is-visible');
     }
 });
 
